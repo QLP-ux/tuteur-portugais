@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TutorPort — Apprendre le Portugais</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0e17;
+    --surface: #1a1928;
+    --surface2: #232235;
+    --border: #2e2d45;
+    --accent: #e8a838;
+    --accent2: #5e60ce;
+    --accent3: #48cae4;
+    --text: #fffffe;
+    --text-muted: #a7a5c0;
+    --success: #43d9ad;
+    --error: #ff6b6b;
+    --warn: #ffd166;
+    --sidebar-w: 300px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 0 20px; height: 58px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .topbar-logo { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--accent); }
+  .topbar-logo span { color: var(--text-muted); font-style: italic; font-size: 13px; margin-left: 6px; }
+  .topbar-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .mode-toggle { display: flex; background: var(--surface2); border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+  .mode-btn { padding: 5px 12px; font-size: 12px; font-weight: 500; color: var(--text-muted); cursor: pointer; border: none; background: none; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
+  .mode-btn.active { background: var(--accent2); color: white; }
+  .lang-select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 5px 8px; border-radius: 8px; font-size: 12px; font-family: 'DM Sans', sans-serif; cursor: pointer; }
+  .profile-pill { display: flex; align-items: center; gap: 6px; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 3px 10px 3px 4px; }
+  .level-dot { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; background: var(--accent); color: var(--bg); }
+  .level-label { font-size: 11px; color: var(--text-muted); }
+
+  .main { display: flex; flex: 1; overflow: hidden; }
+
+  /* SIDEBAR */
+  .sidebar { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0; }
+  .sidebar-tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .sidebar-tab { flex: 1; padding: 10px 4px; text-align: center; font-size: 10px; font-weight: 700; color: var(--text-muted); cursor: pointer; border: none; background: none; letter-spacing: 0.5px; transition: all 0.2s; font-family: 'DM Sans', sans-serif; text-transform: uppercase; border-bottom: 2px solid transparent; }
+  .sidebar-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .sidebar-panel { flex: 1; overflow-y: auto; padding: 14px; display: none; }
+  .sidebar-panel.active { display: block; }
+
+  .feedback-item { background: var(--surface2); border-radius: 10px; padding: 11px; margin-bottom: 9px; border-left: 3px solid var(--success); animation: slideIn 0.3s ease; }
+  .feedback-item.warn { border-left-color: var(--warn); }
+  .feedback-item.error { border-left-color: var(--error); }
+  .feedback-item.tip { border-left-color: var(--accent3); }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
+  .feedback-badge { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--success); margin-bottom: 3px; }
+  .feedback-item.warn .feedback-badge { color: var(--warn); }
+  .feedback-item.error .feedback-badge { color: var(--error); }
+  .feedback-item.tip .feedback-badge { color: var(--accent3); }
+  .feedback-text { font-size: 12px; line-height: 1.5; }
+  .feedback-correction { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--accent); margin-top: 5px; background: rgba(232,168,56,0.1); padding: 3px 7px; border-radius: 4px; }
+  .empty-state { text-align: center; padding: 30px 16px; color: var(--text-muted); font-size: 12px; line-height: 1.7; }
+  .empty-state .icon { font-size: 32px; margin-bottom: 10px; }
+
+  .goals-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .goals-title { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .add-goal-btn { background: var(--accent2); color: white; border: none; border-radius: 6px; padding: 4px 9px; font-size: 11px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .goal-item { display: flex; align-items: flex-start; gap: 9px; padding: 9px 11px; background: var(--surface2); border-radius: 9px; margin-bottom: 7px; border: 1px solid var(--border); }
+  .goal-check { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; margin-top: 2px; cursor: pointer; transition: all 0.2s; }
+  .goal-check.done { background: var(--success); border-color: var(--success); }
+  .goal-text { font-size: 12px; line-height: 1.5; flex: 1; }
+  .goal-del { color: var(--text-muted); cursor: pointer; font-size: 15px; line-height: 1; }
+  .goal-del:hover { color: var(--error); }
+  .goal-add-form { display: none; margin-top: 9px; }
+  .goal-add-form.open { display: flex; gap: 7px; }
+  .goal-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 7px 9px; border-radius: 7px; font-size: 12px; font-family: 'DM Sans', sans-serif; }
+  .goal-input:focus { outline: none; border-color: var(--accent2); }
+  .goal-save-btn { background: var(--success); color: var(--bg); border: none; border-radius: 7px; padding: 7px 12px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+
+  .progress-section { margin-bottom: 16px; }
+  .progress-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-bottom: 5px; }
+  .progress-label span:last-child { font-weight: 700; color: var(--text); }
+  .progress-bar { height: 7px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 18px; }
+  .stat-card { background: var(--surface2); border-radius: 9px; padding: 12px; border: 1px solid var(--border); }
+  .stat-value { font-size: 22px; font-weight: 700; font-family: 'Playfair Display', serif; }
+  .stat-label { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+  .journal-entry { background: var(--surface2); border-radius: 9px; padding: 11px; margin-bottom: 9px; border: 1px solid var(--border); }
+  .journal-date { font-size: 9px; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .journal-text { font-size: 11px; line-height: 1.6; }
+
+  /* CHAT */
+  .chat-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .chat-topic-bar { padding: 8px 18px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
+  .topic-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .topic-tag { background: rgba(94,96,206,0.15); color: var(--accent2); border: 1px solid rgba(94,96,206,0.25); border-radius: 20px; padding: 3px 9px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .topic-tag:hover, .topic-tag.active { background: var(--accent2); color: white; border-color: var(--accent2); }
+
+  .messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .msg { display: flex; gap: 10px; max-width: 680px; animation: msgIn 0.3s ease; }
+  @keyframes msgIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+  .msg-avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+  .msg.bot .msg-avatar { background: linear-gradient(135deg, var(--accent2), var(--accent3)); }
+  .msg.user .msg-avatar { background: linear-gradient(135deg, var(--accent), #f7931e); }
+  .msg-bubble { padding: 11px 14px; border-radius: 14px; font-size: 13px; line-height: 1.6; max-width: calc(100% - 46px); }
+  .msg.bot .msg-bubble { background: var(--surface); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+  .msg.user .msg-bubble { background: var(--accent2); color: white; border-bottom-right-radius: 4px; }
+  .msg-time { font-size: 9px; color: var(--text-muted); margin-top: 3px; }
+  .msg.bot .msg-time { text-align: left; }
+  .msg.user .msg-time { text-align: right; }
+
+  .typing-indicator { display: flex; gap: 4px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; border-bottom-left-radius: 4px; width: fit-content; }
+  .typing-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--text-muted); animation: typingBounce 1.2s infinite; }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typingBounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
+
+  .input-bar { padding: 14px 18px; background: var(--surface); border-top: 1px solid var(--border); display: flex; gap: 9px; align-items: flex-end; flex-shrink: 0; }
+  .msg-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 11px 14px; border-radius: 11px; font-size: 13px; font-family: 'DM Sans', sans-serif; resize: none; max-height: 110px; line-height: 1.5; transition: border-color 0.2s; }
+  .msg-input:focus { outline: none; border-color: var(--accent2); }
+  .msg-input::placeholder { color: var(--text-muted); }
+  .send-btn { width: 42px; height: 42px; border-radius: 11px; background: var(--accent2); border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: all 0.2s; flex-shrink: 0; }
+  .send-btn:hover { background: #4e50be; transform: scale(1.05); }
+  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* REF PANEL */
+  .ref-panel { width: 220px; background: var(--surface); border-left: 1px solid var(--border); overflow-y: auto; padding: 14px; flex-shrink: 0; }
+  .ref-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 10px; padding-bottom: 7px; border-bottom: 1px solid var(--border); }
+  .ref-section { margin-bottom: 14px; }
+  .ref-section-title { font-size: 11px; font-weight: 700; color: var(--accent); margin-bottom: 7px; font-family: 'Playfair Display', serif; }
+  .ref-item { display: flex; gap: 6px; margin-bottom: 4px; font-size: 11px; }
+  .ref-pt { font-family: 'DM Mono', monospace; color: var(--accent3); min-width: 70px; font-size: 10px; }
+  .ref-fr { color: var(--text-muted); }
+
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  @media (max-width: 900px) { .ref-panel { display: none; } }
+  @media (max-width: 650px) { .sidebar { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">TutorPort <span>cours de portugais</span></div>
+  <div class="topbar-controls">
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="modeCasual" onclick="setMode('casual')">Discussion</button>
+      <button class="mode-btn" id="modeLesson" onclick="setMode('lesson')">Cours</button>
+    </div>
+    <select class="lang-select" id="langSelect" onchange="setLang(this.value)">
+      <option value="pt-br">🇧🇷 Portugais BR</option>
+      <option value="pt-pt">🇵🇹 Portugais PT</option>
+    </select>
+    <div class="profile-pill">
+      <div class="level-dot" id="levelDot">A1</div>
+      <span class="level-label" id="levelLabel">Débutant</span>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="sidebar">
+    <div class="sidebar-tabs">
+      <button class="sidebar-tab active" onclick="showTab(this,'tab-feedback')">Retours</button>
+      <button class="sidebar-tab" onclick="showTab(this,'tab-goals')">Objectifs</button>
+      <button class="sidebar-tab" onclick="showTab(this,'tab-progress')">Progrès</button>
+    </div>
+
+    <div class="sidebar-panel active" id="tab-feedback">
+      <div id="feedbackList">
+        <div class="empty-state"><div class="icon">💬</div>Les retours apparaîtront ici après chaque message.</div>
+      </div>
+    </div>
+
+    <div class="sidebar-panel" id="tab-goals">
+      <div class="goals-header">
+        <span class="goals-title">Mes objectifs</span>
+        <button class="add-goal-btn" onclick="toggleGoalForm()">+ Ajouter</button>
+      </div>
+      <div id="goalsList"></div>
+      <div class="goal-add-form" id="goalForm">
+        <input type="text" class="goal-input" id="goalInput" placeholder="Nouvel objectif..." onkeydown="if(event.key==='Enter')saveGoal()">
+        <button class="goal-save-btn" onclick="saveGoal()">✓</button>
+      </div>
+    </div>
+
+    <div class="sidebar-panel" id="tab-progress">
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-value" id="statMessages">0</div><div class="stat-label">Messages</div></div>
+        <div class="stat-card"><div class="stat-value" id="statVocab">0</div><div class="stat-label">Mots nouveaux</div></div>
+        <div class="stat-card"><div class="stat-value" id="statCorrections">0</div><div class="stat-label">Corrections</div></div>
+        <div class="stat-card"><div class="stat-value" id="statTime">0m</div><div class="stat-label">Durée</div></div>
+      </div>
+      <div class="progress-section">
+        <div class="progress-label"><span>Grammaire</span><span id="pctGrammar">5%</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="fillGrammar" style="width:5%;background:var(--accent2)"></div></div>
+      </div>
+      <div class="progress-section">
+        <div class="progress-label"><span>Vocabulaire</span><span id="pctVocab">5%</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="fillVocab" style="width:5%;background:var(--accent3)"></div></div>
+      </div>
+      <div class="progress-section">
+        <div class="progress-label"><span>Fluidité</span><span id="pctPron">5%</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="fillPron" style="width:5%;background:var(--success)"></div></div>
+      </div>
+      <div class="progress-section">
+        <div class="progress-label"><span>Niveau global</span><span id="pctLevel">5%</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="fillLevel" style="width:5%;background:var(--accent)"></div></div>
+      </div>
+      <div style="margin-top:18px;">
+        <div class="ref-title">📓 Journal</div>
+        <div id="journalList"><div class="empty-state" style="padding:16px 0;font-size:11px;">Le journal sera mis à jour au fil de la session.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-area">
+    <div class="chat-topic-bar">
+      <span class="topic-label">Sujet :</span>
+      <span class="topic-tag active" onclick="setTopic(this,'se_reperer')">🗺️ Se repérer</span>
+      <span class="topic-tag" onclick="setTopic(this,'possessifs')">📌 Possessifs &amp; em</span>
+      <span class="topic-tag" onclick="setTopic(this,'ficar')">⏱️ Présent &amp; ficar</span>
+      <span class="topic-tag" onclick="setTopic(this,'proclise')">🔄 Proclise / Enclise</span>
+      <span class="topic-tag" onclick="setTopic(this,'routine')">📅 Routine</span>
+    </div>
+    <div class="messages" id="messages"></div>
+    <div class="input-bar">
+      <textarea class="msg-input" id="msgInput" placeholder="Écris en portugais ou en français..." rows="1"
+        onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+
+  <div class="ref-panel">
+    <div class="ref-title">📚 Référence rapide</div>
+    <div class="ref-section">
+      <div class="ref-section-title">Se repérer</div>
+      <div class="ref-item"><span class="ref-pt">Siga reto</span><span class="ref-fr">Tout droit</span></div>
+      <div class="ref-item"><span class="ref-pt">À esquerda</span><span class="ref-fr">À gauche</span></div>
+      <div class="ref-item"><span class="ref-pt">À direita</span><span class="ref-fr">À droite</span></div>
+      <div class="ref-item"><span class="ref-pt">Perto de</span><span class="ref-fr">Près de</span></div>
+      <div class="ref-item"><span class="ref-pt">Em frente a</span><span class="ref-fr">En face de</span></div>
+      <div class="ref-item"><span class="ref-pt">Perdido/a</span><span class="ref-fr">Perdu(e)</span></div>
+    </div>
+    <div class="ref-section">
+      <div class="ref-section-title">Fréquence</div>
+      <div class="ref-item"><span class="ref-pt">sempre</span><span class="ref-fr">toujours</span></div>
+      <div class="ref-item"><span class="ref-pt">nunca</span><span class="ref-fr">jamais</span></div>
+      <div class="ref-item"><span class="ref-pt">às vezes</span><span class="ref-fr">parfois</span></div>
+      <div class="ref-item"><span class="ref-pt">todos os dias</span><span class="ref-fr">tous les jours</span></div>
+      <div class="ref-item"><span class="ref-pt">de vez em quando</span><span class="ref-fr">de temps en temps</span></div>
+    </div>
+    <div class="ref-section">
+      <div class="ref-section-title">Ficar</div>
+      <div class="ref-item"><span class="ref-pt">position</span><span class="ref-fr">se trouver</span></div>
+      <div class="ref-item"><span class="ref-pt">changement</span><span class="ref-fr">devenir</span></div>
+      <div class="ref-item"><span class="ref-pt">résultat</span><span class="ref-fr">garder/rester</span></div>
+    </div>
+    <div class="ref-section">
+      <div class="ref-section-title">Ser / Estar / Ficar</div>
+      <div class="ref-item"><span class="ref-pt">ser</span><span class="ref-fr">permanent</span></div>
+      <div class="ref-item"><span class="ref-pt">estar</span><span class="ref-fr">temporaire</span></div>
+      <div class="ref-item"><span class="ref-pt">ficar</span><span class="ref-fr">résultat</span></div>
+    </div>
+    <div class="ref-section">
+      <div class="ref-section-title">Pronoms</div>
+      <div class="ref-item"><span class="ref-pt">BR</span><span class="ref-fr">avant verbe</span></div>
+      <div class="ref-item"><span class="ref-pt">PT</span><span class="ref-fr">après verbe</span></div>
+    </div>
+    <div class="ref-section">
+      <div class="ref-section-title">Em + article</div>
+      <div class="ref-item"><span class="ref-pt">na casa</span><span class="ref-fr">dans la maison</span></div>
+      <div class="ref-item"><span class="ref-pt">no carro</span><span class="ref-fr">dans la voiture</span></div>
+      <div class="ref-item"><span class="ref-pt">nas ruas</span><span class="ref-fr">dans les rues</span></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let mode = 'casual';
+let currentLang = 'pt-br';
+let currentTopic = 'se_reperer';
+let messageCount = 0;
+let correctionCount = 0;
+let newVocab = new Set();
+let sessionStart = Date.now();
+let goals = [
+  // Cours 1 — Dialogue: se repérer dans la rue
+  { id: 1, text: "🗺️ Se repérer dans la rue : directions, demander son chemin, dialogue João & Maria à Rio", done: false },
+  { id: 2, text: "📌 Maîtriser em et ses contractions : no, na, nos, nas avec articles et possessifs", done: false },
+  { id: 3, text: "⏱️ Comprendre ficar (rester / devenir / se trouver…) et distinguer ser / estar / ficar", done: false },
+  { id: 4, text: "🔄 Proclise vs enclise : pronom avant (Brésil) ou après (Portugal) le verbe", done: false },
+  { id: 5, text: "📅 Parler de sa routine : expressions de fréquence et leur placement dans la phrase", done: false },
+];
+let grammarScore = 5, vocabScore = 5, pronScore = 5;
+let conversationHistory = [];
+let isTyping = false;
+
+const COURSE_SYSTEM = `Tu es TutorPort, un tuteur de portugais expert et bienveillant. L'interface est entièrement en français.
+Tu enseignes en te basant UNIQUEMENT sur les matériaux de cours suivants fournis par l'utilisateur :
+
+=== COURS 1 : SE REPÉRER — Dialogue João & Maria à Rio de Janeiro ===
+João cherche le Cristo Redentor. Vocabulaire clé :
+- Directions : Siga reto (tout droit), Vire à esquerda (gauche), Vire à direita (droite), Continue até... (continuez jusqu'à)
+- Localisation : Perto de (près de), Longe de (loin de), Em frente a (en face de), Ao lado de (à côté de), Atrás de (derrière), Entre (entre)
+- Vocabulaire urbain : O ponto de táxi, A estação de metrô, A parada de ônibus, O cruzamento, A esquina, No final da rua
+- Phrases utiles : Eu estou perdido/a, Estou procurando..., Vou de táxi / a pé, Onde fica...?
+- Présent continu : estar + gérondif (BR) → "Eu estou procurando" = je suis en train de chercher
+- Politesse : obrigadO (homme parle), obrigadA (femme parle)
+- Expression : Isso mesmo! = C'est bien ça! / Exactement!
+
+=== COURS 2 : LES POSSESSIFS ET LA PRÉPOSITION "EM" ===
+- em seul devant noms propres sans article : em Portugal, em Lisboa, em França, em Montpellier
+- em + article défini → contraction obligatoire : em+a=na, em+o=no, em+as=nas, em+os=nos
+- em + possessif → contraction aussi : em+a minha escola = na minha escola
+- Exemples : na casa, no carro, na minha escola, no seu quarto, na nossa sala, no quarto dele
+- Règle mnémotechnique : si on peut dire le/la/mon/ma/son devant le mot → na/no/nas/nos ; sinon → em seul
+
+=== COURS 3 : LE PRÉSENT ET LE VERBE FICAR ===
+Présent :
+- Présent simple (presente do indicativo) → habitudes / vérités générales
+- Action en cours → estar a + infinitif (portugais européen PT) OU estar + gérondif (brésilien BR)
+
+FICAR — sens central : "se maintenir ou se retrouver dans un état ou une position après une situation donnée"
+- ficar = rester (position stable) : Eu fico em casa (pas de changement, juste une position)
+- ficar = devenir (changement d'état) : Fiquei feliz (avant pas heureux → maintenant heureux)
+- ficar = se trouver (localisation géographique) : O banco fica perto da escola
+- ficar com = avoir/garder (acquisition d'état) : Ele ficou com medo / Ela ficou com o livro
+ERREUR FRÉQUENTE : traduire ficar automatiquement par "rester" — il faut comprendre l'idée de "résultat/état final"
+Comparaison SER/ESTAR/FICAR :
+- ser → caractéristique permanente : Ele é calmo (nature)
+- estar → état temporaire : Ele está calmo (maintenant)
+- ficar → transition/résultat : Ele ficou calmo (il est devenu calme)
+Impératif négatif de ficar : não fiques (tu), não fique (você), não fiquemos (nós), não fiquem (vocês)
+Pretérito perfeito de comer : comi, comeste, comeu, comemos, comeram, comeram
+
+=== COURS 4 : PROCLISE ET ENCLISE ===
+- Pronom clitique = petit mot qui remplace un nom pour éviter la répétition
+- Proclise = pronom AVANT le verbe : courant au Brésil. Exemple : Não me diga!
+- Enclise = pronom APRÈS le verbe : courant au Portugal actuel. Exemple : Diga-me
+- Histoire : Lors des Grandes Découvertes, les colons ont amené la proclise au Brésil. Le Portugal a ensuite évolué vers l'enclise.
+- MYTHE À DÉMYSTIFIER : dire que le portugais du Portugal est "plus conservateur" est FAUX — tout dépend du contexte.
+
+=== COURS 5 : ROUTINE ET HABITUDES ===
+Expressions de fréquence :
+- Courtes → se placent avant le verbe : sempre (toujours), nunca (jamais), às vezes (parfois)
+  Ex : Eu sempre estudo, Ela nunca fuma
+- Longues → début ou fin de phrase : de vez em quando, quase sempre, todos os dias
+  Ex : Quase sempre, ela estuda à noite / Eu vou para a escola quase sempre
+Exemples du cours : Eu brinco todos os dias, Eu como de vez em quando, Às vezes eu saio das aulas mais cedo, Eu nunca bebo refrigerante
+
+=== INSTRUCTIONS PÉDAGOGIQUES ===
+Mode discussion : Converse naturellement en portugais. Encourage et corrige avec douceur.
+Mode cours : Explique structurément avec des exemples tirés UNIQUEMENT des cours ci-dessus.
+TOUTES les explications et tous les retours sont en FRANÇAIS.
+Les exemples sont en PORTUGAIS avec traduction en français.
+
+IMPORTANT : À la fin de chaque réponse, ajoute OBLIGATOIREMENT ce bloc JSON (sur une seule ligne) :
+[FEEDBACK_JSON]{"type":"success","badge":"Bravo !","text":"message en français max 80 chars","correction":null,"vocab":[],"grammar_ok":true}[/FEEDBACK_JSON]
+
+Types possibles : success (bonne réponse), warn (à améliorer), error (erreur), tip (conseil)
+Le champ "correction" contient la correction en portugais si applicable, sinon null.
+Le champ "vocab" liste les nouveaux mots importants utilisés (tableau de strings).
+Le champ "grammar_ok" est true si la grammaire était correcte.`;
+
+function init() {
+  renderGoals();
+  updateTimer();
+  setInterval(updateTimer, 30000);
+  addMessage('bot', `Olá ! 👋 Bienvenue sur **TutorPort** !
+
+Je suis ton tuteur de portugais, basé sur tes cours. Voici ce que j'ai appris avec toi :
+• 🗺️ **Se repérer** — le dialogue de João & Maria à Rio
+• 📝 **Les possessifs** — em, na, no, nas, nos
+• 🔤 **Le présent et ficar** — ser/estar/ficar
+• 🔄 **Proclise et enclise** — la différence BR vs PT
+• 📅 **La routine** — sempre, nunca, às vezes…
+
+Commence à écrire en portugais ou pose-moi une question en français ! 🇧🇷`);
+}
+
+async function sendMessage() {
+  const input = document.getElementById('msgInput');
+  const text = input.value.trim();
+  if (!text || isTyping) return;
+  input.value = '';
+  autoResize(input);
+  messageCount++;
+  document.getElementById('statMessages').textContent = messageCount;
+  addMessage('user', text);
+  conversationHistory.push({ role: 'user', content: text });
+  showTyping();
+  isTyping = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  try {
+    const systemPrompt = COURSE_SYSTEM +
+      `\n\nMode actuel: ${mode === 'casual' ? 'Discussion libre' : 'Cours structuré'}` +
+      `\nVariante portugais: ${currentLang === 'pt-br' ? 'Portugais du Brésil (proclise, estar+gérondif)' : 'Portugais du Portugal (enclise, estar a+infinitif)'}` +
+      `\nSujet actuel: ${currentTopic}`;
+
+    const response = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: conversationHistory
+      })
+    });
+
+    const data = await response.json();
+    const fullText = data.content.map(b => b.text || '').join('');
+    const fbMatch = fullText.match(/\[FEEDBACK_JSON\]([\s\S]*?)\[\/FEEDBACK_JSON\]/);
+    const cleanText = fullText.replace(/\[FEEDBACK_JSON\][\s\S]*?\[\/FEEDBACK_JSON\]/g, '').trim();
+
+    hideTyping();
+    addMessage('bot', cleanText);
+    conversationHistory.push({ role: 'assistant', content: fullText });
+
+    if (fbMatch) {
+      try {
+        const fb = JSON.parse(fbMatch[1].trim());
+        addFeedback(fb);
+        if (fb.vocab && fb.vocab.length) fb.vocab.forEach(v => newVocab.add(v));
+        if (fb.grammar_ok === false) correctionCount++;
+        updateProgress(fb);
+      } catch(e) { console.log('FB parse err:', e); }
+    }
+
+    document.getElementById('statVocab').textContent = newVocab.size;
+    document.getElementById('statCorrections').textContent = correctionCount;
+    if (messageCount % 5 === 0) addJournalEntry();
+    maybeUpdateLevel();
+
+  } catch(e) {
+    hideTyping();
+    addMessage('bot', '⚠️ Erreur de connexion. Vérifie ta clé API et réessaie.');
+  }
+
+  isTyping = false;
+  document.getElementById('sendBtn').disabled = false;
+}
+
+function addMessage(role, text) {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  const now = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
+  const formatted = text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/\n/g, '<br>');
+  div.innerHTML = `
+    <div class="msg-avatar">${role === 'bot' ? '🎓' : '👤'}</div>
+    <div>
+      <div class="msg-bubble">${formatted}</div>
+      <div class="msg-time">${now}</div>
+    </div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping() {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg bot'; div.id = 'typingMsg';
+  div.innerHTML = `<div class="msg-avatar">🎓</div><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function hideTyping() { const t = document.getElementById('typingMsg'); if (t) t.remove(); }
+
+function addFeedback(fb) {
+  const list = document.getElementById('feedbackList');
+  const emp = list.querySelector('.empty-state');
+  if (emp) emp.remove();
+  const div = document.createElement('div');
+  div.className = `feedback-item ${fb.type || 'tip'}`;
+  div.innerHTML = `<div class="feedback-badge">${fb.badge || 'Retour'}</div><div class="feedback-text">${fb.text}</div>${fb.correction ? `<div class="feedback-correction">✏️ ${fb.correction}</div>` : ''}`;
+  list.insertBefore(div, list.firstChild);
+  while (list.children.length > 12) list.removeChild(list.lastChild);
+  // Auto-switch to feedback tab
+  showTabById('tab-feedback');
+}
+
+function renderGoals() {
+  const list = document.getElementById('goalsList');
+  list.innerHTML = '';
+  goals.forEach(g => {
+    const div = document.createElement('div');
+    div.className = 'goal-item';
+    div.innerHTML = `<div class="goal-check ${g.done?'done':''}" onclick="toggleGoal(${g.id})"></div><div class="goal-text">${g.text}</div><div class="goal-del" onclick="deleteGoal(${g.id})">×</div>`;
+    list.appendChild(div);
+  });
+}
+
+function toggleGoal(id) { const g = goals.find(x=>x.id===id); if(g) g.done=!g.done; renderGoals(); }
+function deleteGoal(id) { goals = goals.filter(x=>x.id!==id); renderGoals(); }
+function toggleGoalForm() { const f=document.getElementById('goalForm'); f.classList.toggle('open'); if(f.classList.contains('open')) document.getElementById('goalInput').focus(); }
+function saveGoal() {
+  const input=document.getElementById('goalInput'); const text=input.value.trim();
+  if(!text) return;
+  goals.push({id:Date.now(),text,done:false});
+  input.value=''; document.getElementById('goalForm').classList.remove('open'); renderGoals();
+}
+
+function updateProgress(fb) {
+  if (fb.grammar_ok === true) grammarScore = Math.min(100, grammarScore + 3);
+  else if (fb.grammar_ok === false) grammarScore = Math.max(0, grammarScore - 1);
+  if (fb.vocab && fb.vocab.length) vocabScore = Math.min(100, vocabScore + fb.vocab.length * 2);
+  pronScore = Math.min(100, pronScore + 1);
+  setBar('Grammar', grammarScore);
+  setBar('Vocab', vocabScore);
+  setBar('Pron', pronScore);
+  setBar('Level', Math.round((grammarScore+vocabScore+pronScore)/3));
+}
+
+function setBar(id, pct) {
+  document.getElementById(`fill${id}`).style.width = pct+'%';
+  document.getElementById(`pct${id}`).textContent = pct+'%';
+}
+
+function updateTimer() {
+  const mins = Math.floor((Date.now()-sessionStart)/60000);
+  document.getElementById('statTime').textContent = mins+'m';
+}
+
+function addJournalEntry() {
+  const list = document.getElementById('journalList');
+  const emp = list.querySelector('.empty-state'); if(emp) emp.remove();
+  const now = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+  const div = document.createElement('div');
+  div.className = 'journal-entry';
+  div.innerHTML = `<div class="journal-date">${now}</div><div class="journal-text">${messageCount} échanges · ${newVocab.size} mots · ${correctionCount} corrections · Sujet : ${topicLabel(currentTopic)}</div>`;
+  list.insertBefore(div, list.firstChild);
+}
+
+function maybeUpdateLevel() {
+  const avg = (grammarScore+vocabScore+pronScore)/3;
+  const dot = document.getElementById('levelDot');
+  const label = document.getElementById('levelLabel');
+  if(avg<20){dot.textContent='A1';label.textContent='Débutant';dot.style.background='#ff6b6b';}
+  else if(avg<40){dot.textContent='A2';label.textContent='Élémentaire';dot.style.background='#ffd166';}
+  else if(avg<60){dot.textContent='B1';label.textContent='Intermédiaire';dot.style.background='#48cae4';}
+  else if(avg<80){dot.textContent='B2';label.textContent='Avancé';dot.style.background='#43d9ad';}
+  else{dot.textContent='C1';label.textContent='Courant';dot.style.background='#e8a838';}
+}
+
+function topicLabel(t) {
+  return {se_reperer:'Se repérer',possessifs:'Possessifs & em',ficar:'Présent & ficar',proclise:'Proclise / Enclise',routine:'Routine'}[t]||t;
+}
+
+function showTab(btn, panelId) {
+  document.querySelectorAll('.sidebar-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(panelId).classList.add('active');
+  btn.classList.add('active');
+}
+
+function showTabById(panelId) {
+  const tabs = document.querySelectorAll('.sidebar-tab');
+  const panels = document.querySelectorAll('.sidebar-panel');
+  panels.forEach((p,i)=>{ if(p.id===panelId){p.classList.add('active');tabs[i].classList.add('active');}else{p.classList.remove('active');tabs[i].classList.remove('active');} });
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('modeCasual').classList.toggle('active', m==='casual');
+  document.getElementById('modeLesson').classList.toggle('active', m==='lesson');
+  if(m==='lesson') addMessage('bot','📖 **Mode cours activé.** Je vais structurer mes explications avec des exemples tirés de tes cours. Quel point veux-tu approfondir ?');
+  else addMessage('bot','💬 **Mode discussion activé.** Parlons portugais librement ! Les erreurs font partie de l\'apprentissage.');
+}
+
+function setLang(v) {
+  currentLang = v;
+  const lbl = {fr:'français','pt-br':'portugais brésilien','pt-pt':'portugais européen'};
+  addMessage('bot',`🌍 Variante : **${lbl[v]}**. ${v==='pt-pt'?'Je vais utiliser l\'enclise et estar a + infinitif.':'Je vais utiliser la proclise et estar + gérondif.'}`);
+}
+
+function setTopic(el, topic) {
+  document.querySelectorAll('.topic-tag').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  currentTopic = topic;
+  const hints = {
+    se_reperer:'Entraîne-toi à demander ton chemin : *"Onde fica a estação de metrô ?"* ou décris un trajet à Rio comme dans le dialogue.',
+    possessifs:'Pratique em et ses contractions : na casa, no carro, na minha escola… Je vais te poser des exercices.',
+    ficar:'Utilise ficar dans une phrase ! Ex : *"Eu fiquei feliz"* ou *"O banco fica perto"*.',
+    proclise:'Entraîne-toi avec les pronoms clitiques : proclise au Brésil, enclise au Portugal. Ex : *"Me diga"* vs *"Diga-me"*.',
+    routine:'Décris ta routine avec sempre, nunca, às vezes, de vez em quando… Je corrige le placement.'
+  };
+  addMessage('bot',`🎯 Sujet : **${topicLabel(topic)}**. ${hints[topic]}`);
+}
+
+function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();} }
+function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,110)+'px'; }
+
+init();
+</script>
+</body>
+</html>
